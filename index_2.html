@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Circuit Visualizer</title>
+    <script>
+        function addGate() {
+            let layerDiv = document.getElementById("circuit");
+            let qubitCount = document.getElementById("qubit-number").value;
+
+            let layer = document.createElement("div");
+            layer.className = "layer";
+
+            let qubitSelect = document.createElement("select");
+            for (let i = 0; i < qubitCount; i++) {
+                let option = document.createElement("option");
+                option.value = i;
+                option.textContent = "q" + i;
+                qubitSelect.appendChild(option);
+            }
+
+            let gateSelect = document.createElement("select");
+            ["H", "X", "Y", "Z", "CNOT_C", "CNOT_T", "Measure"].forEach(gate => {
+                let option = document.createElement("option");
+                option.value = gate;
+                option.textContent = gate;
+                gateSelect.appendChild(option);
+            });
+
+            layer.appendChild(qubitSelect);
+            layer.appendChild(gateSelect);
+            layerDiv.appendChild(layer);
+        }
+
+        async function generateCircuit() {
+            let layers = document.querySelectorAll(".layer");
+            let gates = [];
+
+            layers.forEach(layer => {
+                let qubit = layer.children[0].value;
+                let gate = layer.children[1].value;
+                gates.push({ qubit: parseInt(qubit), gate: gate });
+            });
+
+            const response = await fetch('/generate_circuit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gates: gates })
+            });
+
+            const data = await response.json();
+            if (data.image_url) {
+                document.getElementById("circuit-img").src = data.image_url;
+                document.getElementById("download-link").href = data.image_url;
+                document.getElementById("circuit-modal").style.display = "block";
+            } else {
+                alert("Error generating circuit");
+            }
+        }
+
+        function closeModal() {
+            document.getElementById("circuit-modal").style.display = "none";
+        }
+    </script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .layer { margin: 10px; }
+        #circuit-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                         background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px gray; }
+    </style>
+</head>
+<body>
+    <h1>Quantum Circuit Visualizer</h1>
+    <label>Qubit Number: <input type="number" id="qubit-number" min="1" value="2"></label>
+    <br><br>
+    <button onclick="addGate()">Add Gate</button>
+    <div id="circuit"></div>
+    <br>
+    <button onclick="generateCircuit()">View Circuit</button>
+    
+    <div id="circuit-modal">
+        <img id="circuit-img" src="" alt="Quantum Circuit">
+        <br>
+        <a id="download-link" download="quantum_circuit.png">
+            <button>Download Circuit</button>
+        </a>
+        <br>
+        <button onclick="closeModal()">Close</button>
+    </div>
+</body>
+</html>
