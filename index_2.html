@@ -10,42 +10,33 @@
             let qubitCount = document.getElementById("qubit-number").value;
 
             let layer = document.createElement("div");
-            layer.className = "layer";
-
             let qubitSelect = document.createElement("select");
+            let gateSelect = document.createElement("select");
+
             for (let i = 0; i < qubitCount; i++) {
                 let option = document.createElement("option");
-                option.value = i;
-                option.textContent = "q" + i;
+                option.value = i; option.textContent = "q" + i;
                 qubitSelect.appendChild(option);
             }
 
-            let gateSelect = document.createElement("select");
             ["H", "X", "Y", "Z", "CNOT_C", "CNOT_T", "Measure"].forEach(gate => {
                 let option = document.createElement("option");
-                option.value = gate;
-                option.textContent = gate;
+                option.value = gate; option.textContent = gate;
                 gateSelect.appendChild(option);
             });
 
-            layer.appendChild(qubitSelect);
-            layer.appendChild(gateSelect);
+            layer.append(qubitSelect, gateSelect);
             layerDiv.appendChild(layer);
         }
 
         async function generateCircuit() {
-            let layers = document.querySelectorAll(".layer");
-            let gates = [];
-
-            layers.forEach(layer => {
-                let qubit = layer.children[0].value;
-                let gate = layer.children[1].value;
-                gates.push({ qubit: parseInt(qubit), gate: gate });
-            });
+            let gates = [...document.querySelectorAll("#circuit div")].map(layer => ({
+                qubit: parseInt(layer.children[0].value),
+                gate: layer.children[1].value
+            }));
 
             const response = await fetch('/generate_circuit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ gates: gates })
             });
 
@@ -54,38 +45,29 @@
                 document.getElementById("circuit-img").src = data.image_url;
                 document.getElementById("download-link").href = data.image_url;
                 document.getElementById("circuit-modal").style.display = "block";
-            } else {
-                alert("Error generating circuit");
-            }
+            } else alert("Error generating circuit");
         }
 
-        function closeModal() {
-            document.getElementById("circuit-modal").style.display = "none";
-        }
+        function closeModal() { document.getElementById("circuit-modal").style.display = "none"; }
     </script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
-        .layer { margin: 10px; }
-        #circuit-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                         background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px gray; }
+        #circuit div { margin: 5px; }
+        #circuit-modal { display: none; position: fixed; top: 50%; left: 50%;
+                         transform: translate(-50%, -50%); background: white;
+                         padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px gray; }
     </style>
 </head>
 <body>
-    <h1>Quantum Circuit Visualizer</h1>
-    <label>Qubit Number: <input type="number" id="qubit-number" min="1" value="2"></label>
-    <br><br>
+    <h3>Quantum Circuit Visualizer</h3>
+    <label>Qubits: <input type="number" id="qubit-number" min="1" value="2"></label>
     <button onclick="addGate()">Add Gate</button>
+    <button onclick="generateCircuit()">View</button>
     <div id="circuit"></div>
-    <br>
-    <button onclick="generateCircuit()">View Circuit</button>
-    
+
     <div id="circuit-modal">
-        <img id="circuit-img" src="" alt="Quantum Circuit">
-        <br>
-        <a id="download-link" download="quantum_circuit.png">
-            <button>Download Circuit</button>
-        </a>
-        <br>
+        <img id="circuit-img" src="" alt="Circuit">
+        <a id="download-link" download="quantum_circuit.png"><button>Download</button></a>
         <button onclick="closeModal()">Close</button>
     </div>
 </body>
